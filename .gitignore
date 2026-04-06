@@ -1,4 +1,5 @@
 backend/.venv/
+backend/scripts/_smoke_patched.pdf
 backend/**/__pycache__/
 *.pyc
 .env

@@ -202,6 +202,111 @@ body {
   max-height: min(35dvh, 16rem);
 }
 
+.accept-reject-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+}
+
+.patch-button {
+  flex: 1;
+  padding: 0.4rem 0.65rem;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.patch-button-accept {
+  color: #fff;
+  background: #15803d;
+  border-color: #15803d;
+}
+
+.patch-button-accept:hover {
+  background: #166534;
+}
+
+.patch-button-reject {
+  color: inherit;
+  background: transparent;
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+.patch-button-reject:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.accepted-section-title {
+  margin: 1.25rem 0 0.4rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.accepted-empty {
+  margin: 0;
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
+.accepted-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.accepted-item + .accepted-item {
+  margin-top: 0.5rem;
+}
+
+.selection-panel-body.accepted-snippet {
+  max-height: min(28dvh, 12rem);
+  margin: 0;
+}
+
+.export-section-title {
+  margin: 1.25rem 0 0.35rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.export-hint {
+  margin: 0 0 0.5rem;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  opacity: 0.8;
+}
+
+.export-button {
+  width: 100%;
+  padding: 0.45rem 0.75rem;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #fff;
+  background: #0f766e;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.export-button:hover:not(:disabled) {
+  background: #115e59;
+}
+
+.export-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.export-error {
+  margin: 0.5rem 0 0;
+  font-size: 0.8rem;
+  color: #b91c1c;
+}
+
 @media (prefers-color-scheme: dark) {
   .workspace {
     background: #262626;
@@ -241,6 +346,35 @@ body {
   }
 
   .rewrite-error {
+    color: #f87171;
+  }
+
+  .patch-button-accept {
+    background: #22c55e;
+    border-color: #22c55e;
+  }
+
+  .patch-button-accept:hover {
+    background: #16a34a;
+  }
+
+  .patch-button-reject {
+    border-color: rgba(255, 255, 255, 0.25);
+  }
+
+  .patch-button-reject:hover {
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  .export-button {
+    background: #14b8a6;
+  }
+
+  .export-button:hover:not(:disabled) {
+    background: #0d9488;
+  }
+
+  .export-error {
     color: #f87171;
   }
 }

@@ -7,14 +7,18 @@ import {
   type PDFDocumentProxy,
 } from 'pdfjs-dist/legacy/build/pdf.mjs'
 import workerUrl from 'pdfjs-dist/legacy/build/pdf.worker.min.mjs?url'
-import { useSelectionInRoot } from '../hooks/useSelectionInRoot'
+import {
+  usePdfSelection,
+  type PageSelectionDetail,
+  type ViewportForBbox,
+} from '../hooks/usePdfSelection'
 import '../styles/pdfTextLayer.css'
 
 GlobalWorkerOptions.workerSrc = workerUrl
 
 type PdfViewerProps = {
   data: ArrayBuffer | null
-  onSelectionChange?: (text: string) => void
+  onSelectionChange?: (detail: PageSelectionDetail) => void
 }
 
 const RENDER_SCALE = 1.25
@@ -29,16 +33,18 @@ export function PdfViewer({ data, onSelectionChange }: PdfViewerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const textLayerRef = useRef<HTMLDivElement>(null)
   const selectRootRef = useRef<HTMLDivElement>(null)
+  const viewportPdfRef = useRef<ViewportForBbox | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [pageLayout, setPageLayout] = useState<PageLayout | null>(null)
 
-  useSelectionInRoot(selectRootRef, (text) => {
-    onSelectionChange?.(text)
+  usePdfSelection(selectRootRef, viewportPdfRef, 1, (detail) => {
+    onSelectionChange?.(detail)
   })
 
   useEffect(() => {
-    onSelectionChange?.('')
+    onSelectionChange?.({ text: '', page: 1, bbox: null })
     setPageLayout(null)
+    viewportPdfRef.current = null
   }, [data, onSelectionChange])
 
   useEffect(() => {
@@ -51,6 +57,7 @@ export function PdfViewer({ data, onSelectionChange }: PdfViewerProps) {
     const render = async () => {
       setError(null)
       setPageLayout(null)
+      viewportPdfRef.current = null
       const textContainer = textLayerRef.current!
       textContainer.replaceChildren()
 
@@ -63,13 +70,12 @@ export function PdfViewer({ data, onSelectionChange }: PdfViewerProps) {
         if (cancelled) return
 
         const viewport = page.getViewport({ scale: RENDER_SCALE })
+        viewportPdfRef.current = viewport
         const outputScale = new OutputScale()
         const canvas = canvasRef.current!
         const ctx = canvas.getContext('2d', { alpha: false })
         if (!ctx) return
 
-        // Bitmap size × DPR; CSS size = viewport. TextLayer uses the same viewport +
-        // OutputScale.pixelRatio internally — without this, spans misalign and clicks miss.
         canvas.width = Math.floor(viewport.width * outputScale.sx)
         canvas.height = Math.floor(viewport.height * outputScale.sy)
         canvas.style.width = `${viewport.width}px`
@@ -96,9 +102,6 @@ export function PdfViewer({ data, onSelectionChange }: PdfViewerProps) {
         await renderTask.promise
         if (cancelled) return
 
-        // Use streamTextContent() + TextLayer instead of getTextContent(): Safari/WebKit
-        // does not implement async iteration over ReadableStream ("for await"), which
-        // getTextContent relies on. TextLayer consumes the stream via getReader().read().
         const textContentSource = page.streamTextContent()
         if (cancelled) return
 
@@ -112,6 +115,7 @@ export function PdfViewer({ data, onSelectionChange }: PdfViewerProps) {
         if (!cancelled) {
           setError(e instanceof Error ? e.message : 'Could not render PDF')
           setPageLayout(null)
+          viewportPdfRef.current = null
         }
       }
     }
@@ -122,6 +126,7 @@ export function PdfViewer({ data, onSelectionChange }: PdfViewerProps) {
       cancelled = true
       textLayer?.cancel()
       textLayerRef.current?.replaceChildren()
+      viewportPdfRef.current = null
       void doc?.destroy()
     }
   }, [data])
