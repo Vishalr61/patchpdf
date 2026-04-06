@@ -1,10 +1,15 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import { postRewrite } from './api/rewrite'
 import { PdfViewer } from './components/PdfViewer'
 import { SelectionPanel } from './components/SelectionPanel'
 
 export default function App() {
   const [pdfData, setPdfData] = useState<ArrayBuffer | null>(null)
   const [selectedText, setSelectedText] = useState('')
+  const [instruction, setInstruction] = useState('')
+  const [replacementText, setReplacementText] = useState<string | null>(null)
+  const [rewriteLoading, setRewriteLoading] = useState(false)
+  const [rewriteError, setRewriteError] = useState<string | null>(null)
 
   const onFile = useCallback((file: File | undefined) => {
     if (!file || file.type !== 'application/pdf') {
@@ -17,6 +22,29 @@ export default function App() {
   const onSelectionChange = useCallback((text: string) => {
     setSelectedText(text)
   }, [])
+
+  useEffect(() => {
+    setReplacementText(null)
+    setRewriteError(null)
+  }, [selectedText])
+
+  const onRewrite = useCallback(async () => {
+    const text = selectedText.trim()
+    if (!text) return
+
+    setRewriteLoading(true)
+    setRewriteError(null)
+    setReplacementText(null)
+
+    try {
+      const { replacement_text } = await postRewrite(text, instruction)
+      setReplacementText(replacement_text)
+    } catch (e) {
+      setRewriteError(e instanceof Error ? e.message : 'Rewrite failed')
+    } finally {
+      setRewriteLoading(false)
+    }
+  }, [selectedText, instruction])
 
   return (
     <div className="app">
@@ -37,7 +65,15 @@ export default function App() {
         <main className="viewer-pane">
           <PdfViewer data={pdfData} onSelectionChange={onSelectionChange} />
         </main>
-        <SelectionPanel selectedText={selectedText} />
+        <SelectionPanel
+          selectedText={selectedText}
+          instruction={instruction}
+          onInstructionChange={setInstruction}
+          onRewrite={onRewrite}
+          rewriteLoading={rewriteLoading}
+          rewriteError={rewriteError}
+          replacementText={replacementText}
+        />
       </div>
     </div>
   )

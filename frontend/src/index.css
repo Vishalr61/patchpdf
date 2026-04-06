@@ -140,6 +140,68 @@ body {
   font-style: italic;
 }
 
+.rewrite-label {
+  display: block;
+  margin: 1rem 0 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.rewrite-instruction {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.5rem 0.6rem;
+  font: inherit;
+  font-size: 0.875rem;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+  resize: vertical;
+  min-height: 4rem;
+}
+
+.rewrite-instruction:disabled {
+  opacity: 0.6;
+}
+
+.rewrite-button {
+  margin-top: 0.6rem;
+  width: 100%;
+  padding: 0.45rem 0.75rem;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #fff;
+  background: #2563eb;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.rewrite-button:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.rewrite-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.rewrite-error {
+  margin: 0.6rem 0 0;
+  font-size: 0.8rem;
+  color: #b91c1c;
+}
+
+.rewrite-output-title {
+  margin: 1rem 0 0.4rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.selection-panel-body.rewrite-output {
+  max-height: min(35dvh, 16rem);
+}
+
 @media (prefers-color-scheme: dark) {
   .workspace {
     background: #262626;
@@ -162,6 +224,24 @@ body {
   .selection-panel-body {
     background: #1f1f1f;
     border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .rewrite-instruction {
+    background: #1a1a1a;
+    border-color: rgba(255, 255, 255, 0.15);
+    color: inherit;
+  }
+
+  .rewrite-button {
+    background: #3b82f6;
+  }
+
+  .rewrite-button:hover:not(:disabled) {
+    background: #60a5fa;
+  }
+
+  .rewrite-error {
+    color: #f87171;
   }
 }
 
