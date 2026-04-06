@@ -18,6 +18,8 @@ GlobalWorkerOptions.workerSrc = workerUrl
 
 type PdfViewerProps = {
   data: ArrayBuffer | null
+  pageNumber: number
+  onNumPages?: (count: number) => void
   onSelectionChange?: (detail: PageSelectionDetail) => void
 }
 
@@ -29,7 +31,12 @@ type PageLayout = {
   scaleFactor: number
 }
 
-export function PdfViewer({ data, onSelectionChange }: PdfViewerProps) {
+export function PdfViewer({
+  data,
+  pageNumber,
+  onNumPages,
+  onSelectionChange,
+}: PdfViewerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const textLayerRef = useRef<HTMLDivElement>(null)
   const canvasWrapRef = useRef<HTMLDivElement>(null)
@@ -37,7 +44,7 @@ export function PdfViewer({ data, onSelectionChange }: PdfViewerProps) {
   const [error, setError] = useState<string | null>(null)
   const [pageLayout, setPageLayout] = useState<PageLayout | null>(null)
 
-  usePdfSelection(canvasWrapRef, viewportPdfRef, 1, (detail) => {
+  usePdfSelection(canvasWrapRef, viewportPdfRef, pageNumber, (detail) => {
     onSelectionChange?.(detail)
   })
 
@@ -65,7 +72,13 @@ export function PdfViewer({ data, onSelectionChange }: PdfViewerProps) {
         doc = await task.promise
         if (cancelled) return
 
-        const page = await doc.getPage(1)
+        onNumPages?.(doc.numPages)
+
+        const pageIndex = Math.min(
+          Math.max(1, pageNumber),
+          doc.numPages,
+        )
+        const page = await doc.getPage(pageIndex)
         if (cancelled) return
 
         const viewport = page.getViewport({ scale: RENDER_SCALE })
@@ -142,10 +155,10 @@ export function PdfViewer({ data, onSelectionChange }: PdfViewerProps) {
       viewportPdfRef.current = null
       void doc?.destroy()
     }
-  }, [data])
+  }, [data, pageNumber, onNumPages])
 
   if (!data) {
-    return <p className="muted">Upload a PDF to show the first page.</p>
+    return <p className="muted">Upload a PDF to preview it.</p>
   }
 
   const pageCssVars = pageLayout

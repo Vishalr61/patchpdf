@@ -27,6 +27,7 @@ def make_sample_pdf() -> bytes:
     doc = fitz.open()
     page = doc.new_page(width=595, height=842)
     page.insert_text((72, 100), "Hello PatchPDF", fontsize=16)
+    page.insert_text((72, 200), "FooterNote", fontsize=10)
     out = doc.tobytes()
     doc.close()
     return out
@@ -90,15 +91,19 @@ def main() -> int:
     print("OK POST /rewrite ->", body["replacement_text"][:72])
 
     token = "PATCH_OK_42"
-    patch = {
-        "page": 1,
-        "bbox": list(bbox),
-        "replacement_text": token,
+    export_body = {
+        "patches": [
+            {
+                "page": 1,
+                "bbox": list(bbox),
+                "replacement_text": token,
+            },
+        ],
     }
     r = client.post(
         "/export",
         files={"file": ("sample.pdf", pdf, "application/pdf")},
-        data={"patch": json.dumps(patch)},
+        data={"patches": json.dumps(export_body)},
     )
     assert r.status_code == 200, r.text
     ct = r.headers.get("content-type", "")
@@ -119,6 +124,45 @@ def main() -> int:
     out_path = _BACKEND / "scripts" / "_smoke_patched.pdf"
     out_path.write_bytes(patched)
     print(f"Wrote {out_path} for manual inspection")
+
+    r = client.post(
+        "/plan",
+        files={"file": ("sample.pdf", pdf, "application/pdf")},
+        data={"instruction": "smoke plan"},
+    )
+    assert r.status_code == 200, r.text
+    plan = r.json()
+    assert "edits" in plan and isinstance(plan["edits"], list)
+    print("OK POST /plan ->", len(plan["edits"]), "edits (mock may be empty)")
+
+    bbox2 = bbox_for_phrase(pdf, "FooterNote")
+    export_two = {
+        "patches": [
+            {
+                "page": 1,
+                "bbox": list(bbox),
+                "replacement_text": token,
+            },
+            {
+                "page": 1,
+                "bbox": list(bbox2),
+                "replacement_text": "FOOTER_OK",
+            },
+        ],
+    }
+    r = client.post(
+        "/export",
+        files={"file": ("sample.pdf", pdf, "application/pdf")},
+        data={"patches": json.dumps(export_two)},
+    )
+    assert r.status_code == 200, r.text
+    doc3 = fitz.open(stream=r.content, filetype="pdf")
+    try:
+        assert doc3[0].search_for("FOOTER_OK")
+    finally:
+        doc3.close()
+    print("OK POST /export multi-patch -> second token found")
+
     return 0
 
 

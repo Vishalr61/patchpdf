@@ -9,11 +9,17 @@ export type RewriteResponse = {
 export async function postRewrite(
   text: string,
   instruction: string,
+  options?: { previousReplacement?: string },
 ): Promise<RewriteResponse> {
+  const body: Record<string, string> = { text, instruction }
+  if (options?.previousReplacement?.trim()) {
+    body.previous_replacement = options.previousReplacement
+  }
+
   const res = await fetch(`${baseUrl()}/rewrite`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text, instruction }),
+    body: JSON.stringify(body),
   })
 
   if (!res.ok) {
@@ -21,8 +27,8 @@ export async function postRewrite(
     let message = `${res.status} ${res.statusText}`
     if (raw) {
       try {
-        const body = JSON.parse(raw) as { detail?: unknown }
-        if (typeof body.detail === 'string') message = body.detail
+        const parsed = JSON.parse(raw) as { detail?: unknown }
+        if (typeof parsed.detail === 'string') message = parsed.detail
         else message = raw.slice(0, 200)
       } catch {
         message = raw.slice(0, 200)

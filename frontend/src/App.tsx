@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { postExportPdf } from './api/export'
+import { postPlanPdf } from './api/plan'
 import { postRewrite } from './api/rewrite'
 import { PdfViewer } from './components/PdfViewer'
 import { SelectionPanel } from './components/SelectionPanel'
 import type { PageSelectionDetail } from './hooks/usePdfSelection'
-import type { AcceptedPatch, RewriteProposal } from './types/patch'
+import type { AcceptedPatch, BBox, PlanResolvedEdit, RewriteProposal } from './types/patch'
 
 function downloadBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob)
@@ -18,6 +19,8 @@ function downloadBlob(blob: Blob, filename: string) {
 export default function App() {
   const [pdfFile, setPdfFile] = useState<File | null>(null)
   const [pdfData, setPdfData] = useState<ArrayBuffer | null>(null)
+  const [viewerPage, setViewerPage] = useState(1)
+  const [numPages, setNumPages] = useState(0)
   const [selection, setSelection] = useState<PageSelectionDetail>({
     text: '',
     page: 1,
@@ -30,11 +33,17 @@ export default function App() {
   const [rewriteError, setRewriteError] = useState<string | null>(null)
   const [exportLoading, setExportLoading] = useState(false)
   const [exportError, setExportError] = useState<string | null>(null)
+  const [planEdits, setPlanEdits] = useState<PlanResolvedEdit[] | null>(null)
+  const [planLoading, setPlanLoading] = useState(false)
+  const [planError, setPlanError] = useState<string | null>(null)
 
   const selectionPanelRef = useRef<HTMLElement | null>(null)
   const viewerPaneRef = useRef<HTMLElement | null>(null)
-  /** Next empty selection may clear state only after pointerdown in the PDF pane. */
   const viewerMayClearSelectionRef = useRef(false)
+
+  const onNumPages = useCallback((n: number) => {
+    setNumPages(n)
+  }, [])
 
   useEffect(() => {
     const onPointerDownCapture = (e: PointerEvent) => {
@@ -75,6 +84,16 @@ export default function App() {
     })
   }, [])
 
+  const goPage = useCallback(
+    (next: number) => {
+      const max = numPages > 0 ? numPages : 9999
+      const p = Math.min(Math.max(1, next), max)
+      setViewerPage(p)
+      setSelection({ text: '', page: p, bbox: null })
+    },
+    [numPages],
+  )
+
   const onFile = useCallback((file: File | undefined) => {
     if (!file || file.type !== 'application/pdf') {
       setPdfFile(null)
@@ -98,6 +117,10 @@ export default function App() {
     setProposal(null)
     setRewriteError(null)
     setExportError(null)
+    setPlanEdits(null)
+    setPlanError(null)
+    setViewerPage(1)
+    setNumPages(0)
     setSelection({ text: '', page: 1, bbox: null })
   }, [pdfData])
 
@@ -131,6 +154,28 @@ export default function App() {
     }
   }, [selection.text, selection.bbox, selection.page, instruction])
 
+  const onRegenerateProposal = useCallback(async () => {
+    if (!proposal) return
+    setRewriteLoading(true)
+    setRewriteError(null)
+    try {
+      const { replacement_text } = await postRewrite(
+        proposal.originalText,
+        instruction,
+        { previousReplacement: proposal.replacementText },
+      )
+      setProposal({
+        ...proposal,
+        instruction,
+        replacementText: replacement_text,
+      })
+    } catch (e) {
+      setRewriteError(e instanceof Error ? e.message : 'Regenerate failed')
+    } finally {
+      setRewriteLoading(false)
+    }
+  }, [proposal, instruction])
+
   const onAcceptProposal = useCallback(() => {
     if (!proposal) return
     const patch: AcceptedPatch = {
@@ -147,12 +192,11 @@ export default function App() {
 
   const onExport = useCallback(async () => {
     if (!pdfFile || acceptedPatches.length === 0) return
-    const patch = acceptedPatches[acceptedPatches.length - 1]
 
     setExportLoading(true)
     setExportError(null)
     try {
-      const blob = await postExportPdf(pdfFile, patch)
+      const blob = await postExportPdf(pdfFile, acceptedPatches)
       downloadBlob(blob, 'patched.pdf')
     } catch (e) {
       setExportError(e instanceof Error ? e.message : 'Export failed')
@@ -161,11 +205,47 @@ export default function App() {
     }
   }, [pdfFile, acceptedPatches])
 
+  const onGenerateDocumentPlan = useCallback(async () => {
+    if (!pdfFile || !instruction.trim()) return
+    setPlanLoading(true)
+    setPlanError(null)
+    setPlanEdits(null)
+    try {
+      const { edits } = await postPlanPdf(pdfFile, instruction)
+      setPlanEdits(edits)
+    } catch (e) {
+      setPlanError(e instanceof Error ? e.message : 'Plan failed')
+    } finally {
+      setPlanLoading(false)
+    }
+  }, [pdfFile, instruction])
+
+  const onImportResolvedPlan = useCallback(() => {
+    if (!planEdits?.length) return
+    const additions: AcceptedPatch[] = planEdits
+      .filter(
+        (e) =>
+          e.bbox &&
+          e.bbox.length === 4 &&
+          !e.error,
+      )
+      .map((e) => ({
+        id: crypto.randomUUID(),
+        originalText: e.find,
+        replacementText: e.replace,
+        instruction,
+        page: e.page,
+        bbox: e.bbox as BBox,
+      }))
+    if (additions.length === 0) return
+    setAcceptedPatches((prev) => [...prev, ...additions])
+  }, [planEdits, instruction])
+
   return (
     <div className="app">
       <header className="header">
         <h1>PatchPDF</h1>
-        <p className="tagline">Upload a PDF to preview page 1</p>
+        <p className="tagline">Upload a PDF, highlight text, and rewrite with AI assistance</p>
         <label className="file-label">
           <span className="file-button">Choose PDF</span>
           <input
@@ -178,7 +258,35 @@ export default function App() {
       </header>
       <div className="workspace">
         <main ref={viewerPaneRef} className="viewer-pane">
-          <PdfViewer data={pdfData} onSelectionChange={handleSelectionChange} />
+          {pdfData && numPages > 1 ? (
+            <div className="pdf-page-toolbar">
+              <button
+                type="button"
+                className="page-nav-button"
+                onClick={() => goPage(viewerPage - 1)}
+                disabled={viewerPage <= 1}
+              >
+                Previous page
+              </button>
+              <span className="page-indicator">
+                Page {viewerPage} of {numPages}
+              </span>
+              <button
+                type="button"
+                className="page-nav-button"
+                onClick={() => goPage(viewerPage + 1)}
+                disabled={viewerPage >= numPages}
+              >
+                Next page
+              </button>
+            </div>
+          ) : null}
+          <PdfViewer
+            data={pdfData}
+            pageNumber={viewerPage}
+            onNumPages={onNumPages}
+            onSelectionChange={handleSelectionChange}
+          />
         </main>
         <SelectionPanel
           ref={selectionPanelRef}
@@ -186,6 +294,7 @@ export default function App() {
           instruction={instruction}
           onInstructionChange={setInstruction}
           onRewrite={onRewrite}
+          onRegenerateProposal={onRegenerateProposal}
           rewriteLoading={rewriteLoading}
           rewriteError={rewriteError}
           proposal={proposal}
@@ -196,6 +305,12 @@ export default function App() {
           exportLoading={exportLoading}
           exportError={exportError}
           onExport={onExport}
+          planEdits={planEdits}
+          planLoading={planLoading}
+          planError={planError}
+          onGenerateDocumentPlan={onGenerateDocumentPlan}
+          onImportResolvedPlan={onImportResolvedPlan}
+          hasPdfFile={Boolean(pdfFile)}
         />
       </div>
     </div>

@@ -11,3 +11,11 @@ export type RewriteProposal = {
 export type AcceptedPatch = RewriteProposal & {
   id: string
 }
+
+export type PlanResolvedEdit = {
+  page: number
+  find: string
+  replace: string
+  bbox: number[] | null
+  error: string | null
+}

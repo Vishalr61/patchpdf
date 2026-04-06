@@ -4,19 +4,27 @@ const baseUrl = () =>
   (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, '') ||
   'http://127.0.0.1:8000'
 
+function patchToJson(p: AcceptedPatch) {
+  return {
+    page: p.page,
+    bbox: p.bbox,
+    replacement_text: p.replacementText,
+  }
+}
+
 export async function postExportPdf(
   file: File,
-  patch: AcceptedPatch,
+  patches: AcceptedPatch[],
 ): Promise<Blob> {
+  if (patches.length === 0) {
+    throw new Error('no patches to export')
+  }
+
   const form = new FormData()
   form.append('file', file)
   form.append(
-    'patch',
-    JSON.stringify({
-      page: patch.page,
-      bbox: patch.bbox,
-      replacement_text: patch.replacementText,
-    }),
+    'patches',
+    JSON.stringify({ patches: patches.map(patchToJson) }),
   )
 
   const res = await fetch(`${baseUrl()}/export`, {
@@ -29,8 +37,8 @@ export async function postExportPdf(
     const raw = await res.text()
     if (raw) {
       try {
-        const body = JSON.parse(raw) as { detail?: unknown }
-        if (typeof body.detail === 'string') message = body.detail
+        const bodyJson = JSON.parse(raw) as { detail?: unknown }
+        if (typeof bodyJson.detail === 'string') message = bodyJson.detail
         else message = raw.slice(0, 200)
       } catch {
         message = raw.slice(0, 200)
