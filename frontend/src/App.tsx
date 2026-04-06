@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { postExportPdf } from './api/export'
 import { postRewrite } from './api/rewrite'
 import { PdfViewer } from './components/PdfViewer'
@@ -31,6 +31,50 @@ export default function App() {
   const [exportLoading, setExportLoading] = useState(false)
   const [exportError, setExportError] = useState<string | null>(null)
 
+  const selectionPanelRef = useRef<HTMLElement | null>(null)
+  const viewerPaneRef = useRef<HTMLElement | null>(null)
+  /** Next empty selection may clear state only after pointerdown in the PDF pane. */
+  const viewerMayClearSelectionRef = useRef(false)
+
+  useEffect(() => {
+    const onPointerDownCapture = (e: PointerEvent) => {
+      const t = e.target as Node
+      const inPanel = selectionPanelRef.current?.contains(t) ?? false
+      const inViewer = viewerPaneRef.current?.contains(t) ?? false
+      if (inPanel) {
+        viewerMayClearSelectionRef.current = false
+        return
+      }
+      if (inViewer) {
+        viewerMayClearSelectionRef.current = true
+      }
+    }
+    document.addEventListener('pointerdown', onPointerDownCapture, true)
+    return () =>
+      document.removeEventListener('pointerdown', onPointerDownCapture, true)
+  }, [])
+
+  const handleSelectionChange = useCallback((detail: PageSelectionDetail) => {
+    setSelection((prev) => {
+      if (detail.text.trim() && detail.bbox) {
+        viewerMayClearSelectionRef.current = false
+        return detail
+      }
+      if (!detail.text.trim()) {
+        const had = prev.text.trim().length > 0 && prev.bbox
+        if (had && viewerMayClearSelectionRef.current) {
+          viewerMayClearSelectionRef.current = false
+          return detail
+        }
+        viewerMayClearSelectionRef.current = false
+        if (had) {
+          return prev
+        }
+      }
+      return detail
+    })
+  }, [])
+
   const onFile = useCallback((file: File | undefined) => {
     if (!file || file.type !== 'application/pdf') {
       setPdfFile(null)
@@ -42,15 +86,19 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    setProposal(null)
     setRewriteError(null)
+    if (selection.text.trim()) {
+      setProposal(null)
+    }
   }, [selection.text])
 
   useEffect(() => {
+    viewerMayClearSelectionRef.current = false
     setAcceptedPatches([])
     setProposal(null)
     setRewriteError(null)
     setExportError(null)
+    setSelection({ text: '', page: 1, bbox: null })
   }, [pdfData])
 
   const onRewrite = useCallback(async () => {
@@ -129,10 +177,11 @@ export default function App() {
         </label>
       </header>
       <div className="workspace">
-        <main className="viewer-pane">
-          <PdfViewer data={pdfData} onSelectionChange={setSelection} />
+        <main ref={viewerPaneRef} className="viewer-pane">
+          <PdfViewer data={pdfData} onSelectionChange={handleSelectionChange} />
         </main>
         <SelectionPanel
+          ref={selectionPanelRef}
           selectedText={selection.text}
           instruction={instruction}
           onInstructionChange={setInstruction}

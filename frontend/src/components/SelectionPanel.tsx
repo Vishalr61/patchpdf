@@ -1,3 +1,4 @@
+import { forwardRef } from 'react'
 import type { AcceptedPatch, RewriteProposal } from '../types/patch'
 
 type SelectionPanelProps = {
@@ -17,31 +18,37 @@ type SelectionPanelProps = {
   onExport: () => void
 }
 
-export function SelectionPanel({
-  selectedText,
-  instruction,
-  onInstructionChange,
-  onRewrite,
-  rewriteLoading,
-  rewriteError,
-  proposal,
-  onAcceptProposal,
-  onRejectProposal,
-  acceptedPatches,
-  canExport,
-  exportLoading,
-  exportError,
-  onExport,
-}: SelectionPanelProps) {
+export const SelectionPanel = forwardRef<HTMLElement, SelectionPanelProps>(
+  function SelectionPanel(
+    {
+      selectedText,
+      instruction,
+      onInstructionChange,
+      onRewrite,
+      rewriteLoading,
+      rewriteError,
+      proposal,
+      onAcceptProposal,
+      onRejectProposal,
+      acceptedPatches,
+      canExport,
+      exportLoading,
+      exportError,
+      onExport,
+    },
+    ref,
+  ) {
   const empty = selectedText.length === 0
   const canRewrite = !rewriteLoading && selectedText.trim().length > 0
   const canDecide = Boolean(proposal) && !rewriteLoading
 
   return (
-    <aside className="selection-panel" aria-label="Selection and rewrite">
+    <aside ref={ref} className="selection-panel" aria-label="Selection and rewrite">
       <h2 className="selection-panel-title">Selection</h2>
       <p className="selection-panel-hint">
-        Highlight text on the page, add an instruction, then run rewrite.
+        Highlight text in the PDF, then type an instruction (or type first—either order).
+        Your excerpt stays put when you click the instruction field. Run rewrite when both
+        are ready.
       </p>
       <pre className={`selection-panel-body${empty ? ' is-empty' : ''}`}>
         {empty ? 'No text selected' : selectedText}
@@ -143,4 +150,5 @@ export function SelectionPanel({
       ) : null}
     </aside>
   )
-}
+},
+)

@@ -32,20 +32,19 @@ type PageLayout = {
 export function PdfViewer({ data, onSelectionChange }: PdfViewerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const textLayerRef = useRef<HTMLDivElement>(null)
-  const selectRootRef = useRef<HTMLDivElement>(null)
+  const canvasWrapRef = useRef<HTMLDivElement>(null)
   const viewportPdfRef = useRef<ViewportForBbox | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [pageLayout, setPageLayout] = useState<PageLayout | null>(null)
 
-  usePdfSelection(selectRootRef, viewportPdfRef, 1, (detail) => {
+  usePdfSelection(canvasWrapRef, viewportPdfRef, 1, (detail) => {
     onSelectionChange?.(detail)
   })
 
   useEffect(() => {
-    onSelectionChange?.({ text: '', page: 1, bbox: null })
     setPageLayout(null)
     viewportPdfRef.current = null
-  }, [data, onSelectionChange])
+  }, [data])
 
   useEffect(() => {
     if (!data || !canvasRef.current || !textLayerRef.current) return
@@ -70,7 +69,21 @@ export function PdfViewer({ data, onSelectionChange }: PdfViewerProps) {
         if (cancelled) return
 
         const viewport = page.getViewport({ scale: RENDER_SCALE })
-        viewportPdfRef.current = viewport
+        const rd = viewport.rawDims as {
+          pageWidth: number
+          pageHeight: number
+          pageX: number
+          pageY: number
+        }
+        viewportPdfRef.current = {
+          width: viewport.width,
+          height: viewport.height,
+          pdfPageWidth: rd.pageWidth,
+          pdfPageHeight: rd.pageHeight,
+          pdfPageX: rd.pageX,
+          pdfPageY: rd.pageY,
+          convertToPdfPoint: viewport.convertToPdfPoint.bind(viewport),
+        }
         const outputScale = new OutputScale()
         const canvas = canvasRef.current!
         const ctx = canvas.getContext('2d', { alpha: false })
@@ -146,13 +159,8 @@ export function PdfViewer({ data, onSelectionChange }: PdfViewerProps) {
   return (
     <div className="pdf-viewer">
       {error ? <p className="error">{error}</p> : null}
-      <div
-        ref={selectRootRef}
-        className="patchpdf-page"
-        style={pageCssVars}
-        hidden={!pageLayout}
-      >
-        <div className="patchpdf-canvas-wrap">
+      <div className="patchpdf-page" style={pageCssVars} hidden={!pageLayout}>
+        <div ref={canvasWrapRef} className="patchpdf-canvas-wrap">
           <canvas ref={canvasRef} className="pdf-canvas" />
           <div ref={textLayerRef} className="textLayer" contentEditable={false} />
         </div>

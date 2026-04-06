@@ -14,7 +14,12 @@ class RewriteResponse(BaseModel):
 
 BBox = Annotated[
     tuple[float, float, float, float],
-    Field(description="PDF user-space axis-aligned box: x0, y0, x1, y1"),
+    Field(
+        description=(
+            "Axis-aligned box in PDF user space (pdf.js convertToPdfPoint), "
+            "y axis upward; server maps to page space via PyMuPDF transformation_matrix"
+        ),
+    ),
 ]
 
 

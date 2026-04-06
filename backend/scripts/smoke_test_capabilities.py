@@ -32,22 +32,39 @@ def make_sample_pdf() -> bytes:
     return out
 
 
+def _page_rect_to_pdf_user_bbox(page: fitz.Page, rect: fitz.Rect) -> tuple[float, float, float, float]:
+    """Invert ``transformation_matrix`` so /export receives PDF-user-space like the web client."""
+    inv = ~page.transformation_matrix
+    corners = [
+        (rect.x0, rect.y0),
+        (rect.x1, rect.y0),
+        (rect.x0, rect.y1),
+        (rect.x1, rect.y1),
+    ]
+    pts = [fitz.Point(x, y).transform(inv) for x, y in corners]
+    xs = [p.x for p in pts]
+    ys = [p.y for p in pts]
+    return (min(xs), min(ys), max(xs), max(ys))
+
+
 def bbox_for_phrase(pdf_bytes: bytes, needle: str) -> tuple[float, float, float, float]:
     doc = fitz.open(stream=pdf_bytes, filetype="pdf")
     try:
-        hits = doc[0].search_for(needle)
+        page = doc[0]
+        hits = page.search_for(needle)
         if not hits:
             raise RuntimeError(f"phrase not found in PDF: {needle!r}")
         r = hits[0]
         # Tight search boxes are too small for insert_textbox; give room for replacement text.
         pad_x, pad_y = 6.0, 8.0
         grow_right, grow_down = 220.0, 36.0
-        return (
+        page_box = fitz.Rect(
             r.x0 - pad_x,
             r.y0 - pad_y,
             r.x1 + grow_right,
             r.y1 + grow_down,
         )
+        return _page_rect_to_pdf_user_bbox(page, page_box)
     finally:
         doc.close()
 

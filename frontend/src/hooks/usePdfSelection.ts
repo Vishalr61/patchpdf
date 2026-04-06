@@ -6,10 +6,16 @@ export type PageSelectionDetail = {
   bbox: [number, number, number, number] | null
 }
 
-/** Minimal viewport surface needed to map DOM selection to PDF coordinates. */
+/**
+ * Viewport info for mapping DOM selection → PDF user space (pdf.js convertToPdfPoint).
+ */
 export type ViewportForBbox = {
   width: number
   height: number
+  pdfPageWidth: number
+  pdfPageHeight: number
+  pdfPageX: number
+  pdfPageY: number
   convertToPdfPoint: (x: number, y: number) => number[]
 }
 
@@ -36,6 +42,16 @@ function unionPdfBBox(
 
   if (!Number.isFinite(minVx)) return null
 
+  const rw = rootRect.width
+  const rh = rootRect.height
+  if (rw <= 0 || rh <= 0) return null
+  const sx = viewport.width / rw
+  const sy = viewport.height / rh
+  minVx *= sx
+  maxVx *= sx
+  minVy *= sy
+  maxVy *= sy
+
   const pad = 0.5
   minVx = Math.max(0, minVx - pad)
   minVy = Math.max(0, minVy - pad)
@@ -51,16 +67,32 @@ function unionPdfBBox(
   const pdfPts = corners.map(([vx, vy]) => viewport.convertToPdfPoint(vx, vy))
   const xs = pdfPts.map((p) => p[0])
   const ys = pdfPts.map((p) => p[1])
-  return [
-    Math.min(...xs),
-    Math.min(...ys),
-    Math.max(...xs),
-    Math.max(...ys),
-  ]
+
+  let xMin = Math.min(...xs)
+  let xMax = Math.max(...xs)
+  let yPdfMin = Math.min(...ys)
+  let yPdfMax = Math.max(...ys)
+
+  const px = viewport.pdfPageX
+  const py = viewport.pdfPageY
+  const pw = viewport.pdfPageWidth
+  const ph = viewport.pdfPageHeight
+  const xMaxPdf = px + pw
+  const yTopPdf = py + ph
+
+  xMin = Math.max(px, xMin)
+  xMax = Math.min(xMaxPdf, xMax)
+  yPdfMin = Math.max(py, yPdfMin)
+  yPdfMax = Math.min(yTopPdf, yPdfMax)
+
+  if (xMax <= xMin || yPdfMax <= yPdfMin) return null
+
+  return [xMin, yPdfMin, xMax, yPdfMax]
 }
 
 /**
- * Reports text + PDF-space bbox for the current window selection inside `rootRef`.
+ * Reports text + PDF user-space bbox for the current window selection inside `rootRef`.
+ * Backend maps to page space with PyMuPDF ``transformation_matrix``.
  */
 export function usePdfSelection(
   rootRef: RefObject<HTMLElement | null>,
