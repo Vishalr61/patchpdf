@@ -22,7 +22,7 @@ body {
 
 #root {
   min-height: 100dvh;
-  max-width: 960px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 1.5rem;
 }
@@ -80,15 +80,68 @@ body {
   border: 0;
 }
 
-.main {
+.workspace {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-start;
   background: #fff;
   border-radius: 8px;
   padding: 1rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
+.viewer-pane {
+  flex: 1 1 320px;
+  min-width: 0;
+}
+
+.selection-panel {
+  flex: 0 0 280px;
+  width: 100%;
+  max-width: 360px;
+  padding: 0.75rem 1rem;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.02);
+  align-self: stretch;
+}
+
+.selection-panel-title {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.selection-panel-hint {
+  margin: 0 0 0.75rem;
+  font-size: 0.8rem;
+  opacity: 0.75;
+}
+
+.selection-panel-body {
+  margin: 0;
+  padding: 0.75rem;
+  font-family: inherit;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: min(60dvh, 28rem);
+  overflow: auto;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 4px;
+}
+
+.selection-panel-body.is-empty {
+  color: inherit;
+  opacity: 0.55;
+  font-style: italic;
+}
+
 @media (prefers-color-scheme: dark) {
-  .main {
+  .workspace {
     background: #262626;
     box-shadow: none;
   }
@@ -100,6 +153,16 @@ body {
   .file-button:hover {
     background: #60a5fa;
   }
+
+  .selection-panel {
+    border-color: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  .selection-panel-body {
+    background: #1f1f1f;
+    border-color: rgba(255, 255, 255, 0.1);
+  }
 }
 
 .pdf-viewer {
@@ -109,11 +172,12 @@ body {
   gap: 0.75rem;
 }
 
-.pdf-canvas {
+.patchpdf-page {
   max-width: 100%;
-  height: auto;
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  border-radius: 4px;
+}
+
+.patchpdf-page:not([hidden]) {
+  display: block;
 }
 
 .muted {
@@ -133,7 +197,9 @@ body {
     color: #f87171;
   }
 
-  .pdf-canvas {
+  .patchpdf-page {
     border-color: rgba(255, 255, 255, 0.15);
+    background-color: #2a2a2a;
   }
 }
+

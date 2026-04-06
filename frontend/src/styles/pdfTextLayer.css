@@ -1,0 +1,115 @@
+/* Minimal styles for PDF.js TextLayer + page shell (aligned with pdf_viewer.css semantics). */
+.hiddenCanvasElement {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+.patchpdf-page {
+  --user-unit: 1;
+  --total-scale-factor: calc(var(--scale-factor) * var(--user-unit));
+  --scale-round-x: 1px;
+  --scale-round-y: 1px;
+  position: relative;
+  overflow: visible;
+  margin: 0 auto;
+  background-color: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 4px;
+}
+
+.patchpdf-canvas-wrap {
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+}
+
+.patchpdf-canvas-wrap > canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  margin: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  /* Avoid layout containment here: Safari can mis-hit-test siblings (text layer) vs canvas. */
+  /* Let clicks go to the text layer above; avoids engines that still hit-test the canvas first. */
+  pointer-events: none;
+}
+
+.textLayer {
+  color-scheme: only light;
+  position: absolute;
+  text-align: initial;
+  inset: 0;
+  overflow: hidden;
+  opacity: 1;
+  line-height: 1;
+  text-size-adjust: none;
+  forced-color-adjust: none;
+  transform-origin: 0 0;
+  caret-color: CanvasText;
+  z-index: 1;
+  -webkit-user-select: text;
+  user-select: text;
+  /* iOS / WebKit: allow callout + selection on touch devices */
+  -webkit-touch-callout: default;
+}
+
+.textLayer :is(span, br) {
+  /*
+   * WebKit (Safari): fully transparent text often does not participate in selection / hit-testing.
+   * Nearly-invisible ink keeps layout the same but allows click-drag to select like Chrome.
+   */
+  color: rgba(0, 0, 0, 0.02);
+  -webkit-text-fill-color: rgba(0, 0, 0, 0.02);
+  position: absolute;
+  white-space: pre;
+  cursor: text;
+  transform-origin: 0% 0%;
+  pointer-events: auto;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.textLayer {
+  --min-font-size: 1;
+  --text-scale-factor: calc(var(--total-scale-factor) * var(--min-font-size));
+  --min-font-size-inv: calc(1 / var(--min-font-size));
+}
+
+.textLayer > :not(.markedContent),
+.textLayer .markedContent span:not(.markedContent) {
+  z-index: 1;
+  --font-height: 0;
+  font-size: calc(var(--text-scale-factor) * var(--font-height));
+  --scale-x: 1;
+  --rotate: 0deg;
+  transform: rotate(var(--rotate)) scaleX(var(--scale-x))
+    scale(var(--min-font-size-inv));
+}
+
+.textLayer .markedContent {
+  display: contents;
+}
+
+.textLayer ::selection {
+  background: rgba(0, 0, 255, 0.25);
+}
+
+.textLayer br::selection {
+  background: transparent;
+}
+
+[data-main-rotation='90'] {
+  transform: rotate(90deg) translateY(-100%);
+}
+[data-main-rotation='180'] {
+  transform: rotate(180deg) translate(-100%, -100%);
+}
+[data-main-rotation='270'] {
+  transform: rotate(270deg) translateX(-100%);
+}

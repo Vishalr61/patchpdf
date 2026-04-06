@@ -1,8 +1,10 @@
 import { useCallback, useState } from 'react'
 import { PdfViewer } from './components/PdfViewer'
+import { SelectionPanel } from './components/SelectionPanel'
 
 export default function App() {
   const [pdfData, setPdfData] = useState<ArrayBuffer | null>(null)
+  const [selectedText, setSelectedText] = useState('')
 
   const onFile = useCallback((file: File | undefined) => {
     if (!file || file.type !== 'application/pdf') {
@@ -10,6 +12,10 @@ export default function App() {
       return
     }
     void file.arrayBuffer().then(setPdfData)
+  }, [])
+
+  const onSelectionChange = useCallback((text: string) => {
+    setSelectedText(text)
   }, [])
 
   return (
@@ -27,9 +33,12 @@ export default function App() {
           />
         </label>
       </header>
-      <main className="main">
-        <PdfViewer data={pdfData} />
-      </main>
+      <div className="workspace">
+        <main className="viewer-pane">
+          <PdfViewer data={pdfData} onSelectionChange={onSelectionChange} />
+        </main>
+        <SelectionPanel selectedText={selectedText} />
+      </div>
     </div>
   )
 }
