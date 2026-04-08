@@ -70,12 +70,6 @@ By default the UI calls `http://127.0.0.1:8000`. Override with `VITE_API_BASE_UR
    - **Overlay** (better when you need to preserve look)
 7. Click **Download PDF**.
 
-### Notes / limitations
-
-- PDFs are hard to “edit like Word.” **Overlay** does not reflow surrounding text.
-- **Reflow** produces a clean document but does not preserve the original layout (columns, spacing, exact fonts).
-- Scanned/image-only PDFs are not fully supported without OCR.
-
 ### Development smoke test (backend)
 
 ```bash
