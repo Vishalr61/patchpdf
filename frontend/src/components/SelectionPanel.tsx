@@ -102,7 +102,9 @@ export const SelectionPanel = forwardRef<HTMLElement, SelectionPanelProps>(
 
         <section className="studio-section">
           <div className="section-head">
-            <h3 className="section-title">Selected text</h3>
+            <h3 className="section-title">
+              <span className="step">1</span> Selected text
+            </h3>
             <span className={`pill${empty ? '' : ' is-on'}`}>
               {empty ? 'No selection' : `p.${(proposal?.page ?? '') || ''}`.trim()}
             </span>
@@ -124,7 +126,9 @@ export const SelectionPanel = forwardRef<HTMLElement, SelectionPanelProps>(
 
         <section className="studio-section">
           <div className="section-head">
-            <h3 className="section-title">Instruction</h3>
+            <h3 className="section-title">
+              <span className="step">2</span> Instruction
+            </h3>
             <span className="section-subtitle">Type first or select first—either works.</span>
           </div>
           <textarea
@@ -167,7 +171,9 @@ export const SelectionPanel = forwardRef<HTMLElement, SelectionPanelProps>(
 
         <section className="studio-section">
           <div className="section-head">
-            <h3 className="section-title">Output</h3>
+            <h3 className="section-title">
+              <span className="step">3</span> Output
+            </h3>
             <span className="section-subtitle">AI output preview</span>
           </div>
           <pre className={`studio-pre${!proposal ? ' is-empty' : ''}`}>
@@ -179,20 +185,12 @@ export const SelectionPanel = forwardRef<HTMLElement, SelectionPanelProps>(
           </pre>
 
           {canDecide ? (
-            <div className="studio-actions">
-              <button
-                type="button"
-                className="btn btn-success"
-                onClick={onAcceptProposal}
-              >
+            <div className="accept-pair">
+              <button type="button" className="mini-btn mini-accept" onClick={onAcceptProposal}>
                 Accept
               </button>
-              <button
-                type="button"
-                className="btn btn-ghost"
-                onClick={onRejectProposal}
-              >
-                Reject
+              <button type="button" className="mini-btn mini-discard" onClick={onRejectProposal}>
+                Discard
               </button>
             </div>
           ) : null}
@@ -248,9 +246,9 @@ export const SelectionPanel = forwardRef<HTMLElement, SelectionPanelProps>(
         <section className="studio-section">
           <div className="section-head">
             <h3 className="section-title">
-              Accepted changes{acceptedPatches.length > 0 ? ` (${acceptedPatches.length})` : ''}
+              Accepted changes
             </h3>
-            <span className="section-subtitle">Applied in order at export</span>
+            <span className="count-badge">{acceptedPatches.length}</span>
           </div>
           {acceptedPatches.length === 0 ? (
             <p className="muted-line">None yet. Accept a proposal to store it here.</p>

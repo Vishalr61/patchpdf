@@ -49,9 +49,30 @@ export default function App() {
 
   const activeDoc = docs.find((d) => d.id === activeDocId) ?? null
 
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
   const selectionPanelRef = useRef<HTMLElement | null>(null)
   const viewerPaneRef = useRef<HTMLElement | null>(null)
   const viewerMayClearSelectionRef = useRef(false)
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      const key = e.key.toLowerCase()
+      if ((e.metaKey || e.ctrlKey) && key === 'o') {
+        e.preventDefault()
+        fileInputRef.current?.click()
+        return
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        if (activeDoc?.selection.text.trim()) {
+          e.preventDefault()
+          // onRewrite is declared later; use custom event to avoid TS ordering issues.
+          window.dispatchEvent(new CustomEvent('patchpdf:rewrite'))
+        }
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [activeDoc])
 
   const onNumPages = useCallback(
     (n: number) => {
@@ -185,6 +206,14 @@ export default function App() {
     })
   }, [])
 
+  const onDropPdf = useCallback(
+    (file: File | undefined) => {
+      if (!file) return
+      onFile(file)
+    },
+    [onFile],
+  )
+
   const onRewrite = useCallback(async () => {
     if (!activeDoc) return
     const text = activeDoc.selection.text.trim()
@@ -246,6 +275,14 @@ export default function App() {
       )
     }
   }, [activeDoc])
+
+  useEffect(() => {
+    const handler = () => {
+      void onRewrite()
+    }
+    window.addEventListener('patchpdf:rewrite', handler as EventListener)
+    return () => window.removeEventListener('patchpdf:rewrite', handler as EventListener)
+  }, [onRewrite])
 
   const onRegenerateProposal = useCallback(async () => {
     if (!activeDoc?.proposal) return
@@ -431,7 +468,12 @@ export default function App() {
     <div className="app">
       <header className="topbar">
         <div className="topbar-left">
-          <div className="brand">PatchPDF</div>
+          <div className="brand">
+            <span className="brand-mark" aria-hidden="true">
+              ☐
+            </span>
+            PatchPDF
+          </div>
           <nav className="tabs" aria-label="Documents">
             {docs.map((d) => (
               <button
@@ -447,8 +489,13 @@ export default function App() {
         </div>
         <div className="topbar-right">
           <label className="file-label">
-            <span className="file-button">Open PDF</span>
+            <span className="file-button">
+              Open PDF <span className="kbd">⌘O</span>
+            </span>
             <input
+              ref={(el) => {
+                fileInputRef.current = el
+              }}
               type="file"
               accept="application/pdf"
               className="sr-only"
@@ -459,6 +506,40 @@ export default function App() {
       </header>
       <div className="workspace">
         <main ref={viewerPaneRef} className="viewer-pane">
+          {!activeDoc ? (
+            <div
+              className="dropzone"
+              onDragOver={(e) => {
+                e.preventDefault()
+              }}
+              onDrop={(e) => {
+                e.preventDefault()
+                onDropPdf(e.dataTransfer.files?.[0])
+              }}
+            >
+              <div className="dropzone-inner">
+                <div className="dropzone-icon" aria-hidden="true">
+                  ⎘
+                </div>
+                <div className="dropzone-title">Drop your PDF here</div>
+                <div className="dropzone-sub">or click to browse your files</div>
+                <label className="file-label">
+                  <span className="file-button file-button-ghost">Choose PDF</span>
+                  <input
+                    type="file"
+                    accept="application/pdf"
+                    className="sr-only"
+                    onChange={(e) => onFile(e.target.files?.[0])}
+                  />
+                </label>
+                <div className="dropzone-pills">
+                  <span className="pill-soft">.pdf</span>
+                  <span className="pill-soft">typed text only</span>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
           {activeDoc && activeDoc.numPages > 1 ? (
             <div className="pdf-page-toolbar">
               <button
@@ -496,12 +577,14 @@ export default function App() {
               </button>
             </div>
           ) : null}
-          <PdfViewer
-            data={activeDoc?.data ?? null}
-            pageNumber={activeDoc?.viewerPage ?? 1}
-            onNumPages={onNumPages}
-            onSelectionChange={handleSelectionChange}
-          />
+          {activeDoc ? (
+            <PdfViewer
+              data={activeDoc.data}
+              pageNumber={activeDoc.viewerPage}
+              onNumPages={onNumPages}
+              onSelectionChange={handleSelectionChange}
+            />
+          ) : null}
         </main>
         <SelectionPanel
           ref={selectionPanelRef}

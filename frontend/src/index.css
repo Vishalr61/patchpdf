@@ -518,7 +518,7 @@ body {
   --stroke-2: rgba(255, 255, 255, 0.08);
   --text: rgba(255, 255, 255, 0.92);
   --muted: rgba(255, 255, 255, 0.65);
-  --accent: #38bdf8;
+  --accent: #5b5ef4;
   --accent-2: #22c55e;
   --danger: #fb7185;
 }
@@ -566,6 +566,19 @@ body {
   opacity: 0.9;
 }
 
+.brand-mark {
+  display: inline-grid;
+  place-items: center;
+  width: 1.3rem;
+  height: 1.3rem;
+  margin-right: 0.5rem;
+  border-radius: 8px;
+  border: 1px solid rgba(91, 94, 244, 0.45);
+  background: rgba(91, 94, 244, 0.16);
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 0.85rem;
+}
+
 .tabs {
   display: flex;
   align-items: center;
@@ -589,18 +602,38 @@ body {
 
 .tab.is-active {
   color: var(--text);
-  border-color: rgba(56, 189, 248, 0.45);
-  background: rgba(56, 189, 248, 0.12);
+  border-color: rgba(91, 94, 244, 0.55);
+  background: rgba(91, 94, 244, 0.18);
 }
 
 .file-button {
-  background: rgba(56, 189, 248, 0.14);
+  background: rgba(91, 94, 244, 0.16);
   color: var(--text);
-  border: 1px solid rgba(56, 189, 248, 0.35);
+  border: 1px solid rgba(91, 94, 244, 0.45);
 }
 
 .file-button:hover {
-  background: rgba(56, 189, 248, 0.2);
+  background: rgba(91, 94, 244, 0.24);
+}
+
+.kbd {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.1rem 0.35rem;
+  border-radius: 8px;
+  border: 1px solid var(--stroke);
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 0.75em;
+  color: var(--muted);
+}
+
+.file-button-ghost {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--stroke);
+}
+
+.file-button-ghost:hover {
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .viewer-pane {
@@ -633,6 +666,121 @@ body {
   color: var(--text);
   font: inherit;
   font-size: 0.8rem;
+}
+
+.step {
+  display: inline-grid;
+  place-items: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-right: 0.5rem;
+  border-radius: 999px;
+  border: 1px solid rgba(91, 94, 244, 0.5);
+  background: rgba(91, 94, 244, 0.15);
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.count-badge {
+  min-width: 1.6rem;
+  height: 1.35rem;
+  display: inline-grid;
+  place-items: center;
+  padding: 0 0.45rem;
+  border-radius: 999px;
+  border: 1px solid var(--stroke);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  font-size: 0.78rem;
+}
+
+.accept-pair {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+}
+
+.mini-btn {
+  flex: 1;
+  padding: 0.35rem 0.55rem;
+  border-radius: 12px;
+  border: 1px solid var(--stroke);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.mini-accept {
+  border-color: rgba(34, 197, 94, 0.4);
+  background: rgba(34, 197, 94, 0.14);
+}
+
+.mini-discard {
+  border-color: rgba(251, 113, 133, 0.35);
+  background: rgba(251, 113, 133, 0.1);
+}
+
+.dropzone {
+  min-height: 52vh;
+  display: grid;
+  place-items: center;
+  border-radius: 18px;
+  border: 1px dashed rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.02);
+  padding: 1.25rem;
+}
+
+.dropzone-inner {
+  width: min(420px, 100%);
+  text-align: center;
+  padding: 1.25rem 1rem;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.dropzone-icon {
+  width: 3rem;
+  height: 3rem;
+  margin: 0 auto 0.8rem;
+  display: grid;
+  place-items: center;
+  border-radius: 18px;
+  border: 1px solid rgba(91, 94, 244, 0.4);
+  background: rgba(91, 94, 244, 0.14);
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 1.2rem;
+}
+
+.dropzone-title {
+  font-weight: 650;
+  margin-bottom: 0.25rem;
+}
+
+.dropzone-sub {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin-bottom: 0.85rem;
+}
+
+.dropzone-pills {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.9rem;
+  flex-wrap: wrap;
+}
+
+.pill-soft {
+  font-size: 0.75rem;
+  color: var(--muted);
+  border: 1px solid var(--stroke);
+  border-radius: 999px;
+  padding: 0.18rem 0.5rem;
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .patch-studio {
@@ -735,9 +883,9 @@ body {
 }
 
 .pill.is-on {
-  color: rgba(56, 189, 248, 0.95);
-  border-color: rgba(56, 189, 248, 0.35);
-  background: rgba(56, 189, 248, 0.1);
+  color: rgba(91, 94, 244, 0.98);
+  border-color: rgba(91, 94, 244, 0.45);
+  background: rgba(91, 94, 244, 0.14);
 }
 
 .studio-pre {
@@ -798,8 +946,8 @@ body {
 }
 
 .btn-primary {
-  border-color: rgba(56, 189, 248, 0.35);
-  background: rgba(56, 189, 248, 0.14);
+  border-color: rgba(91, 94, 244, 0.45);
+  background: rgba(91, 94, 244, 0.18);
 }
 
 .btn-secondary {
