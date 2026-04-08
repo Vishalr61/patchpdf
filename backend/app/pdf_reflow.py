@@ -80,7 +80,7 @@ def _insert_textbox_fit(
     color: tuple[float, float, float] = (0, 0, 0),
     align: int = fitz.TEXT_ALIGN_LEFT,
     fontsize: float,
-) -> None:
+) -> float:
     # Try to fit by shrinking first (avoid blank pages when insert_textbox refuses).
     min_font = max(7.0, fontsize * 0.7)
     fs = fontsize
@@ -94,43 +94,21 @@ def _insert_textbox_fit(
             align=align,
         )
         if excess >= 0:
-            return
+            return rect.height - float(excess)
         fs -= 0.5
 
-    # Last resort: insert the largest prefix that fits.
-    lo, hi = 0, len(text)
-    best = 0
-    while lo <= hi:
-        mid = (lo + hi) // 2
-        trial = text[:mid].rstrip()
-        if not trial:
-            hi = mid - 1
-            continue
-        page.clean_contents()  # reset any partial insertions
-        excess = page.insert_textbox(
-            rect,
-            trial + "…",
-            fontsize=min_font,
-            fontname=fontname,
-            color=color,
-            align=align,
-        )
-        if excess >= 0:
-            best = mid
-            lo = mid + 1
-        else:
-            hi = mid - 1
-
-    if best > 0:
-        page.clean_contents()
-        page.insert_textbox(
-            rect,
-            text[:best].rstrip() + "…",
-            fontsize=min_font,
-            fontname=fontname,
-            color=color,
-            align=align,
-        )
+    # Last resort: draw as much as fits at min_font (may clip / partially render).
+    excess = page.insert_textbox(
+        rect,
+        text,
+        fontsize=min_font,
+        fontname=fontname,
+        color=color,
+        align=align,
+    )
+    if excess >= 0:
+        return rect.height - float(excess)
+    return rect.height
 
 
 def rebuild_pdf_from_text(
@@ -149,12 +127,10 @@ def rebuild_pdf_from_text(
             sp = src[i]
             pr = sp.rect
             page = out.new_page(width=pr.width, height=pr.height)
-            rect = fitz.Rect(
-                margin,
-                margin,
-                max(margin + 50.0, pr.width - margin),
-                max(margin + 50.0, pr.height - margin),
-            )
+            x0 = margin
+            x1 = max(margin + 50.0, pr.width - margin)
+            y = margin
+            y_bottom = max(margin + 50.0, pr.height - margin)
 
             raw_text = _extract_page_text(sp)
             repls = replacements_by_page.get(i + 1, [])
@@ -163,21 +139,27 @@ def rebuild_pdf_from_text(
             if not text:
                 continue
 
-            # Use built-in fonts that can render CJK + bullets/dashes reliably.
-            # Base-14 fonts (helv/tiro) frequently miss these glyphs.
-            fn = "korea" if (_contains_cjk(text) or _contains_wide_punct(text)) else fontname
+            # Reflow in chunks so we can switch fonts only where needed.
+            # This keeps Latin text looking normal while still supporting bullets/dashes/CJK.
+            chunks = [c.strip() for c in re.split(r"\n{2,}", text) if c.strip()]
+            gap = max(8.0, fontsize * 0.8)
 
-            # Render into a single text box with wrapping. This sacrifices original layout
-            # (columns, exact spacing) but provides stable reflow for longer edits.
-            _insert_textbox_fit(
-                page,
-                rect,
-                text,
-                fontsize=fontsize,
-                fontname=fn,
-                color=(0, 0, 0),
-                align=fitz.TEXT_ALIGN_LEFT,
-            )
+            for chunk in chunks:
+                if y >= y_bottom - 10:
+                    break
+                rect = fitz.Rect(x0, y, x1, y_bottom)
+                needs_unicode = _contains_cjk(chunk) or _contains_wide_punct(chunk)
+                fn = "korea" if needs_unicode else fontname
+                used = _insert_textbox_fit(
+                    page,
+                    rect,
+                    chunk,
+                    fontsize=fontsize,
+                    fontname=fn,
+                    color=(0, 0, 0),
+                    align=fitz.TEXT_ALIGN_LEFT,
+                )
+                y = min(y_bottom, y + used + gap)
 
         return out.tobytes()
     finally:
