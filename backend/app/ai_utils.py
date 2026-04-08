@@ -10,14 +10,17 @@ from typing import Any
 
 import httpx
 
-try:
-    from dotenv import load_dotenv
+_MOCK_ONLY = os.getenv("PATCHPDF_MOCK_ONLY", "").strip().lower() in {"1", "true", "yes"}
 
-    load_dotenv(Path(__file__).resolve().parent.parent / ".env")
-except ImportError:
-    pass
+if not _MOCK_ONLY:
+    try:
+        from dotenv import load_dotenv
 
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "").strip()
+        load_dotenv(Path(__file__).resolve().parent.parent / ".env")
+    except ImportError:
+        pass
+
+OPENAI_API_KEY = "" if _MOCK_ONLY else os.getenv("OPENAI_API_KEY", "").strip()
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini").strip()
 OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1").rstrip("/")
 OPENAI_TIMEOUT = float(os.getenv("OPENAI_TIMEOUT", "60"))

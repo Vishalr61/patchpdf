@@ -30,6 +30,10 @@ BBox = Annotated[
 class ExportPatch(BaseModel):
     page: int = Field(..., ge=1, description="1-based page number")
     bbox: BBox
+    original_text: str | None = Field(
+        None,
+        description="Original excerpt to replace (used by reflow rebuild export)",
+    )
     replacement_text: str = Field(..., description="Text to draw over the whited-out region")
 
 

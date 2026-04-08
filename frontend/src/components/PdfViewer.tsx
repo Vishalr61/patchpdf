@@ -17,7 +17,7 @@ import '../styles/pdfTextLayer.css'
 GlobalWorkerOptions.workerSrc = workerUrl
 
 type PdfViewerProps = {
-  data: ArrayBuffer | null
+  data: Uint8Array | null
   pageNumber: number
   onNumPages?: (count: number) => void
   onSelectionChange?: (detail: PageSelectionDetail) => void
@@ -68,7 +68,8 @@ export function PdfViewer({
       textContainer.replaceChildren()
 
       try {
-        const task = getDocument({ data: new Uint8Array(data) })
+        // PDF.js may transfer/detach input buffers to the worker. Always pass a copy.
+        const task = getDocument({ data: data.slice() })
         doc = await task.promise
         if (cancelled) return
 

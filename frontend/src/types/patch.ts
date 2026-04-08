@@ -19,3 +19,5 @@ export type PlanResolvedEdit = {
   bbox: number[] | null
   error: string | null
 }
+
+export type ExportMode = 'reflow' | 'overlay'

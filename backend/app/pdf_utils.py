@@ -4,6 +4,18 @@ from __future__ import annotations
 
 import fitz
 
+def _contains_cjk(s: str) -> bool:
+    for ch in s:
+        o = ord(ch)
+        if (
+            0x4E00 <= o <= 0x9FFF
+            or 0x3400 <= o <= 0x4DBF
+            or 0x3040 <= o <= 0x30FF
+            or 0xAC00 <= o <= 0xD7AF
+        ):
+            return True
+    return False
+
 def _pdf_user_bbox_to_page_rect(page: fitz.Page, bbox: tuple[float, float, float, float]) -> fitz.Rect:
     x0, y0, x1, y1 = bbox
     xa0, xa1 = min(x0, x1), max(x0, x1)
@@ -152,11 +164,23 @@ def apply_text_patch_to_doc(
         return
 
     fontsize, fontname, color, align = detect_text_style(page, base)
+    if _contains_cjk(text):
+        # Base-14 fonts won't draw CJK glyphs; use built-in CJK font.
+        fontname = "china-s"
     min_font = max(5.0, fontsize * 0.45)
 
-    while fontsize >= min_font:
+    # Prefer keeping the detected font size. If the rewrite is longer than the
+    # selected box, expand the patch region downward (white-out more area)
+    # before shrinking the font. This avoids tiny “corner text” for long edits.
+    pr = page.rect
+    max_grow = min(pr.y1, rect.y0 + max(140.0, rect.height * 4.0))
+    grow_step = max(12.0, fontsize * 1.35)
+
+    cur = fitz.Rect(rect)
+    while cur.y1 < max_grow:
+        page.draw_rect(cur, color=(1, 1, 1), fill=(1, 1, 1), width=0)
         excess = page.insert_textbox(
-            rect,
+            cur,
             text,
             fontsize=fontsize,
             fontname=fontname,
@@ -164,9 +188,24 @@ def apply_text_patch_to_doc(
             align=align,
         )
         if excess >= 0:
-            break
+            return
+        cur = fitz.Rect(cur.x0, cur.y0, cur.x1, min(max_grow, cur.y1 + grow_step))
+
+    # Fall back to shrinking the font if it still doesn't fit.
+    cur = fitz.Rect(cur.x0, cur.y0, cur.x1, pr.y1)
+    while fontsize >= min_font:
+        page.draw_rect(cur, color=(1, 1, 1), fill=(1, 1, 1), width=0)
+        excess = page.insert_textbox(
+            cur,
+            text,
+            fontsize=fontsize,
+            fontname=fontname,
+            color=color,
+            align=align,
+        )
+        if excess >= 0:
+            return
         fontsize -= 0.75
-        page.draw_rect(rect, color=(1, 1, 1), fill=(1, 1, 1), width=0)
 
 
 def apply_text_patch(

@@ -6,6 +6,7 @@ from fastapi.responses import Response
 
 from app.ai_utils import plan_edits, rewrite
 from app.pdf_plan import extract_document_text_for_plan, resolve_all_plan_edits
+from app.pdf_reflow import rebuild_pdf_from_text
 from app.pdf_utils import apply_patches, apply_text_patch
 from app.schemas import (
     ExportPatchesBody,
@@ -73,6 +74,10 @@ async def export_pdf(
             description='JSON: {"patches":[{"page":1,"bbox":[...],"replacement_text":"..."}]}',
         ),
     ],
+    mode: Annotated[
+        str,
+        Form(description="export mode: reflow (default) or overlay"),
+    ] = "reflow",
 ) -> Response:
     try:
         body = ExportPatchesBody.model_validate_json(patches)
@@ -83,21 +88,32 @@ async def export_pdf(
     if not raw:
         raise HTTPException(status_code=400, detail="empty PDF upload")
 
-    items: list[tuple[int, tuple[float, float, float, float], str]] = [
-        (p.page, tuple(p.bbox), p.replacement_text) for p in body.patches
-    ]
+    mode_norm = (mode or "reflow").strip().lower()
 
     try:
-        if len(items) == 1:
-            page_1, bbox, text = items[0]
-            out = apply_text_patch(
-                raw,
-                page_index=page_1 - 1,
-                bbox=bbox,
-                replacement_text=text,
-            )
+        if mode_norm == "overlay":
+            items: list[tuple[int, tuple[float, float, float, float], str]] = [
+                (p.page, tuple(p.bbox), p.replacement_text) for p in body.patches
+            ]
+            if len(items) == 1:
+                page_1, bbox, text = items[0]
+                out = apply_text_patch(
+                    raw,
+                    page_index=page_1 - 1,
+                    bbox=bbox,
+                    replacement_text=text,
+                )
+            else:
+                out = apply_patches(raw, items)
         else:
-            out = apply_patches(raw, items)
+            replacements_by_page: dict[int, list[tuple[str, str]]] = {}
+            for p in body.patches:
+                find = (p.original_text or "").strip()
+                if not find:
+                    # fall back: use replacement only if no find; skip
+                    continue
+                replacements_by_page.setdefault(p.page, []).append((find, p.replacement_text))
+            out = rebuild_pdf_from_text(raw, replacements_by_page=replacements_by_page)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
 

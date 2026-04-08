@@ -96,7 +96,8 @@ def main() -> int:
             {
                 "page": 1,
                 "bbox": list(bbox),
-                "replacement_text": token,
+                "original_text": "Hello PatchPDF",
+                "replacement_text": "你好 PATCH_OK_42",
             },
         ],
     }
@@ -141,11 +142,13 @@ def main() -> int:
             {
                 "page": 1,
                 "bbox": list(bbox),
+                "original_text": "Hello PatchPDF",
                 "replacement_text": token,
             },
             {
                 "page": 1,
                 "bbox": list(bbox2),
+                "original_text": "FooterNote",
                 "replacement_text": "FOOTER_OK",
             },
         ],

@@ -8,13 +8,17 @@ function patchToJson(p: AcceptedPatch) {
   return {
     page: p.page,
     bbox: p.bbox,
+    original_text: p.originalText,
     replacement_text: p.replacementText,
   }
 }
 
+export type ExportMode = 'reflow' | 'overlay'
+
 export async function postExportPdf(
   file: File,
   patches: AcceptedPatch[],
+  mode: ExportMode = 'reflow',
 ): Promise<Blob> {
   if (patches.length === 0) {
     throw new Error('no patches to export')
@@ -26,6 +30,7 @@ export async function postExportPdf(
     'patches',
     JSON.stringify({ patches: patches.map(patchToJson) }),
   )
+  form.append('mode', mode)
 
   const res = await fetch(`${baseUrl()}/export`, {
     method: 'POST',

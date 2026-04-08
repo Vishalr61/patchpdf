@@ -508,3 +508,362 @@ body {
   }
 }
 
+/* ---- UI redesign (dark IDE-like) ---- */
+
+:root {
+  --bg: #0b0f14;
+  --surface: #0f1722;
+  --surface-2: #121c2a;
+  --stroke: rgba(255, 255, 255, 0.12);
+  --stroke-2: rgba(255, 255, 255, 0.08);
+  --text: rgba(255, 255, 255, 0.92);
+  --muted: rgba(255, 255, 255, 0.65);
+  --accent: #38bdf8;
+  --accent-2: #22c55e;
+  --danger: #fb7185;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+#root {
+  max-width: 1400px;
+  padding: 1.25rem;
+}
+
+.workspace {
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+  gap: 1.25rem;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--stroke);
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.03));
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.brand {
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  opacity: 0.9;
+}
+
+.tabs {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+  overflow: auto;
+  padding-bottom: 2px;
+}
+
+.tab {
+  border: 1px solid var(--stroke-2);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--muted);
+  border-radius: 10px;
+  padding: 0.4rem 0.65rem;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.tab.is-active {
+  color: var(--text);
+  border-color: rgba(56, 189, 248, 0.45);
+  background: rgba(56, 189, 248, 0.12);
+}
+
+.file-button {
+  background: rgba(56, 189, 248, 0.14);
+  color: var(--text);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+}
+
+.file-button:hover {
+  background: rgba(56, 189, 248, 0.2);
+}
+
+.viewer-pane {
+  border: 1px solid var(--stroke);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 0.9rem;
+}
+
+.pdf-page-toolbar {
+  margin-bottom: 0.8rem;
+}
+
+.page-nav-button {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  border-color: var(--stroke);
+}
+
+.page-indicator {
+  color: var(--muted);
+}
+
+.page-jump-input {
+  width: 5rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 10px;
+  border: 1px solid var(--stroke);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.8rem;
+}
+
+.patch-studio {
+  flex: 0 0 360px;
+  width: 100%;
+  max-width: 420px;
+  align-self: stretch;
+  border: 1px solid var(--stroke);
+  border-radius: 16px;
+  background: rgba(15, 23, 34, 0.75);
+  backdrop-filter: blur(12px);
+  padding: 0.9rem;
+}
+
+.studio-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.studio-title {
+  margin: 0;
+  font-size: 0.95rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+.studio-mode {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.studio-mode-label {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.segmented {
+  display: inline-flex;
+  border: 1px solid var(--stroke);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.segmented-btn {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  padding: 0.3rem 0.55rem;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.78rem;
+}
+
+.segmented-btn.is-active {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.studio-section {
+  border: 1px solid var(--stroke-2);
+  border-radius: 14px;
+  padding: 0.75rem;
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.studio-section + .studio-section {
+  margin-top: 0.75rem;
+}
+
+.section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.section-title {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 650;
+}
+
+.section-subtitle {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.pill {
+  font-size: 0.75rem;
+  color: var(--muted);
+  border: 1px solid var(--stroke-2);
+  border-radius: 999px;
+  padding: 0.1rem 0.45rem;
+}
+
+.pill.is-on {
+  color: rgba(56, 189, 248, 0.95);
+  border-color: rgba(56, 189, 248, 0.35);
+  background: rgba(56, 189, 248, 0.1);
+}
+
+.studio-pre {
+  margin: 0;
+  padding: 0.65rem;
+  border-radius: 12px;
+  border: 1px solid var(--stroke-2);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
+  max-height: min(28dvh, 12rem);
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 0.83rem;
+  line-height: 1.45;
+}
+
+.studio-pre.is-empty {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.studio-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.55rem 0.6rem;
+  border-radius: 12px;
+  border: 1px solid var(--stroke);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.86rem;
+  resize: vertical;
+  min-height: 4.25rem;
+}
+
+.studio-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.6rem;
+}
+
+.btn {
+  border-radius: 12px;
+  padding: 0.45rem 0.7rem;
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+  border: 1px solid var(--stroke);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  border-color: rgba(56, 189, 248, 0.35);
+  background: rgba(56, 189, 248, 0.14);
+}
+
+.btn-secondary {
+  border-color: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.btn-success {
+  border-color: rgba(34, 197, 94, 0.35);
+  background: rgba(34, 197, 94, 0.14);
+}
+
+.btn-ghost {
+  background: transparent;
+}
+
+.inline-error {
+  margin: 0.55rem 0 0;
+  font-size: 0.78rem;
+  color: var(--danger);
+}
+
+.muted-line {
+  margin: 0.25rem 0 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.accepted-row {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0.35rem;
+}
+
+.accepted-meta {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-right: auto;
+}
+
+.icon-btn {
+  width: 1.8rem;
+  height: 1.8rem;
+  border-radius: 10px;
+  border: 1px solid var(--stroke-2);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+}
+
+.icon-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.icon-btn-danger {
+  border-color: rgba(251, 113, 133, 0.35);
+  color: rgba(251, 113, 133, 0.95);
+}
+
+/* Keep the PDF page card readable in dark UI */
+.patchpdf-page {
+  background-color: #fff;
+}
+
